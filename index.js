@@ -3,21 +3,41 @@ const crypto = require('crypto');
 
 const pass = Buffer.from('MySecretPass');
 
-const enc = new Buffer(GibberishAES.enc('This is a top secret message innit', pass.toString()), 'base64');
+const gibenc = GibberishAES.enc('This is a top secret message innit, we\'re trying to make it break on the 64th character', pass.toString());
+
+const enc = new Buffer(gibenc, 'base64');
+
+console.log(gibenc);
 
 console.log('Expected:', GibberishAES.dec(enc.toString('base64'), pass.toString()));
 
-const passHash = crypto.createHash('md5').update(pass, 'utf-8').digest();
+function decrypt(enc, pass) {
+  const salt = enc.slice(8, 16);
+  const data = enc.slice(16, enc.length);
+  const pbe = generateKey(pass, salt);
+  const cipher = crypto.createDecipheriv('aes-256-cbc', pbe.key, pbe.iv);
+  
+  let dec = cipher.update(data);
+  return Buffer.concat([dec, cipher.final()]).toString('utf8');
+}
 
-const salt = enc.slice(8, 16);
-const data = enc.slice(16, enc.length);
-const pbe = generateKey(pass, salt);
-const cipher = crypto.createDecipheriv('aes-256-cbc', pbe.key, pbe.iv);
+function encrypt(input, pass) {
+  const salt = crypto.randomBytes(8);
+  const pbe = generateKey(pass, salt);
+  const saltBlock = Buffer.concat([Buffer.from('Salted__'), salt]);
+  const cipher = crypto.createCipheriv('aes-256-cbc', pbe.key, pbe.iv);
 
-let dec = cipher.update(data);
-dec = Buffer.concat([dec, cipher.final()]);
+  const enc = cipher.update(input, 'utf8');
+  return Buffer.concat([saltBlock, enc, cipher.final()]).toString('base64').match(/.{1,60}/g).join("\n");
+}
 
-console.log('dec', dec.toString('utf8'));
+console.log('dec', decrypt(enc, pass));
+
+const newEnc = encrypt('This is a top secret message innit, we\'re trying to make it break on the 64th character', pass);
+
+console.log('newEnc', newEnc);
+
+console.log('GibberishDec', GibberishAES.dec(newEnc, pass.toString()));
 
 function md5(buffer) {
     return crypto.createHash('md5').update(buffer).digest();
@@ -26,7 +46,6 @@ function md5(buffer) {
 function generateKey(password, salt) {
   const rounds = 3;
   md5Hash = [];
-  result = Buffer.alloc(48);
   data00 = Buffer.concat([password, salt]);
   md5Hash[0] = md5(data00);
   result = md5Hash[0];
