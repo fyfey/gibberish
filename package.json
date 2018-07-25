@@ -1,0 +1,19 @@
+{
+  "name": "gibberish-aes-native",
+  "version": "1.0.0",
+  "description": "Native AES encryption and decryption - GibberishAES compatible",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fyfey/gibberish.git"
+  },
+  "author": "Stuart Fyfe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fyfey/gibberish/issues"
+  },
+  "homepage": "https://github.com/fyfey/gibberish#readme"
+}
